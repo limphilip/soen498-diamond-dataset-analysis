@@ -34,7 +34,7 @@ maxIteration = int(sys.argv[5])
 # -------------------------------------------------
 # Read the input file 
 # -------------------------------------------------
-dataFrame = spark.read.csv(dataFilePath, header=False)
+dataFrame = spark.read.csv(dataFilePath, header=True)
 
 # -------------------------------------------------
 # Normalize data between 0 and 1
@@ -47,19 +47,37 @@ dataFrame = spark.read.csv(dataFilePath, header=False)
 # -------------------------------------------------
 
 # Obtain all the min and max of each column for normalization
-minMax = dataFrame.select(max('carat'), min('carat'), \
-	max('cut'), min('cut'), \
-	max('color'), min('color'), \
-	max('clarity'), min('clarity'), \
-	max('depth'), min('depth'), \
-	max('table'), min('table'), \
-	max('price'), min('price'), \
-	max('x'), min('x'), \
-	max('y'), min('y'), \
-	max('z'), min('z')).collect()
-	
-print(minMax)
+maxCarat = dataFrame.select(max('carat')).collect()[0][0]
+minCarat = dataFrame.select(min('carat')).collect()[0][0]
 
+maxCut = dataFrame.select(max('cut')).collect()[0][0]
+minCut = dataFrame.select(min('cut')).collect()[0][0]
+
+maxColor = dataFrame.select(max('color')).collect()[0][0]
+minColor = dataFrame.select(min('color')).collect()[0][0]
+
+maxClarity = dataFrame.select(max('clarity')).collect()[0][0]
+minClarity = dataFrame.select(min('clarity')).collect()[0][0]
+
+maxDepth = dataFrame.select(max('depth')).collect()[0][0]
+minDepth = dataFrame.select(min('depth')).collect()[0][0]
+
+maxTable = dataFrame.select(max('table')).collect()[0][0]
+minTable = dataFrame.select(min('table')).collect()[0][0]
+
+maxPrice = dataFrame.select(max('price')).collect()[0][0]
+minPrice = dataFrame.select(min('price')).collect()[0][0]
+
+maxX = dataFrame.select(max('x')).collect()[0][0]
+minX = dataFrame.select(min('x')).collect()[0][0]
+
+maxY = dataFrame.select(max('y')).collect()[0][0]
+minY = dataFrame.select(min('y')).collect()[0][0]
+
+maxZ = dataFrame.select(max('z')).collect()[0][0]
+minZ = dataFrame.select(min('z')).collect()[0][0]
+	
+print(maxCarat)
 
 # -------------------------------------------------
 # Create a training and test dataset
