@@ -3,7 +3,7 @@
 # (1) The file path of the diamond dataset
 # (2) The seed value
 # (3) The user column name in the dataset
-# (4) The iteam column name in the dataset
+# (4) The item column name in the dataset
 # (5) Max iteration for the ALS model 
 #
 # It then normalizes the data, split the dataset into
@@ -21,6 +21,7 @@ from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.ml.linalg import Vectors
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import min, max, col, when
+from pyspark.sql.types import DoubleType
 
 spark = SparkSession.builder.getOrCreate()
 
@@ -34,10 +35,29 @@ itemColumn = sys.argv[4]
 maxIteration = int(sys.argv[5])
 
 # -------------------------------------------------
-# Read the input file 
+# Read the input file and cast the numeric column
+# to double type
 # -------------------------------------------------
 dataFrame = spark.read.csv(dataFilePath, header=True)
+
+dataFrame = dataFrame.withColumn("caratDouble", dataFrame["carat"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("depthDouble", dataFrame["depth"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("tableDouble", dataFrame["table"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("priceDouble", dataFrame["price"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("xDouble", dataFrame["x"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("yDouble", dataFrame["y"].cast(DoubleType()))
+dataFrame = dataFrame.withColumn("zDouble", dataFrame["z"].cast(DoubleType()))
+
+dataFrame = dataFrame.select("caratDouble","color", "clarity", "depthDouble", "tableDouble", "priceDouble", "xDouble", "yDouble", "zDouble", "cut") \
+		.withColumnRenamed("caratDouble", "carat") \
+		.withColumnRenamed("depthDouble", "depth") \
+		.withColumnRenamed("tableDouble", "table") \
+		.withColumnRenamed("priceDouble", "price") \
+		.withColumnRenamed("xDouble", "x") \
+		.withColumnRenamed("yDouble", "y") \
+		.withColumnRenamed("zDouble", "z")
 dataFrame.show()
+print(dataFrame.schema)
 
 # -------------------------------------------------
 # Normalize data between 0 and 1
@@ -113,7 +133,8 @@ minY = dataFrame.select(min('y')).collect()[0][0]
 maxZ = dataFrame.select(max('z')).collect()[0][0]
 minZ = dataFrame.select(min('z')).collect()[0][0]
 	
-print(maxCarat)
+print(maxPrice)
+print(minPrice)
 
 # Normalize the data
 nCaratCol = (col("carat") - float(minCarat)) / (float(maxCarat) - float(minCarat))
