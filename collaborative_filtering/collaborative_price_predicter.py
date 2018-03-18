@@ -17,8 +17,10 @@
 import sys
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.recommendation import ALS
+from pyspark.ml.feature import MinMaxScaler, VectorAssembler
+from pyspark.ml.linalg import Vectors
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import min, max
+from pyspark.sql.functions import min, max, col, when
 
 spark = SparkSession.builder.getOrCreate()
 
@@ -35,6 +37,7 @@ maxIteration = int(sys.argv[5])
 # Read the input file 
 # -------------------------------------------------
 dataFrame = spark.read.csv(dataFilePath, header=True)
+dataFrame.show()
 
 # -------------------------------------------------
 # Normalize data between 0 and 1
@@ -46,7 +49,40 @@ dataFrame = spark.read.csv(dataFilePath, header=True)
 #	x is (x1, x2, ..., xi, ..., xn)
 # -------------------------------------------------
 
-# Obtain all the min and max of each column for normalization
+# Transform the labels to numbers 
+cutNumColumn = when(col("cut") == "Fair", 1) \
+		.when(col("cut") == "Good", 2) \
+		.when(col("cut") == "Very Good", 3) \
+		.when(col("cut") == "Premium", 4) \
+		.when(col("cut") == "Ideal", 5) \
+		.otherwise(0)
+
+colorNumColumn = when(col("color") == "J", 1) \
+		.when(col("color") == "I", 2) \
+		.when(col("color") == "H", 3) \
+		.when(col("color") == "G", 4) \
+		.when(col("color") == "F", 5) \
+		.when(col("color") == "E", 6) \
+		.when(col("color") == "D", 7) \
+		.otherwise(0)
+
+clarityNumColumn = when(col("clarity") == "I1", 1) \
+		.when(col("clarity") == "SI2", 2) \
+		.when(col("clarity") == "SI1", 3) \
+		.when(col("clarity") == "VS2", 4) \
+		.when(col("clarity") == "VS1", 5) \
+		.when(col("clarity") == "VVS2", 6) \
+		.when(col("clarity") == "VVS1", 7) \
+		.when(col("clarity") == "IF", 8) \
+		.otherwise(0)
+
+dataFrame = dataFrame.withColumn("cutNum", cutNumColumn)
+dataFrame = dataFrame.withColumn("colorNum", colorNumColumn)
+dataFrame = dataFrame.withColumn("clarityNum", clarityNumColumn)
+dataFrame.show()
+
+
+# Obtain all the min and max of each column for normalizatization
 maxCarat = dataFrame.select(max('carat')).collect()[0][0]
 minCarat = dataFrame.select(min('carat')).collect()[0][0]
 
