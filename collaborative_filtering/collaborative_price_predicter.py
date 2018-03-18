@@ -28,6 +28,7 @@ spark = SparkSession.builder.getOrCreate()
 # -------------------------------------------------
 # Obtain the system arguments
 # -------------------------------------------------
+print('Reading arguments...')
 dataFilePath = sys.argv[1]
 seedValue = int(sys.argv[2])
 userColumn = sys.argv[3]
@@ -38,8 +39,10 @@ maxIteration = int(sys.argv[5])
 # Read the input file and cast the numeric column
 # to double type
 # -------------------------------------------------
+print('Reading data file...')
 dataFrame = spark.read.csv(dataFilePath, header=True)
 
+print('Casting numeric data to Double...')
 dataFrame = dataFrame.withColumn("caratDouble", dataFrame["carat"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("depthDouble", dataFrame["depth"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("tableDouble", dataFrame["table"].cast(DoubleType()))
@@ -59,17 +62,11 @@ dataFrame = dataFrame.select("caratDouble","color", "clarity", "depthDouble", "t
 dataFrame.show()
 print(dataFrame.schema)
 
-# -------------------------------------------------
-# Normalize data between 0 and 1
-# According to this formula:
-# zi = (xi - min(x))/(max(x)-min(x))
-# where 
-# 	zi is the normalized value 
-# 	xi is the original value prior to normalization
-#	x is (x1, x2, ..., xi, ..., xn)
-# -------------------------------------------------
 
+# -------------------------------------------------
 # Transform the labels to numbers 
+# -------------------------------------------------
+print('Mapping categorical data to numerical...')
 cutNumColumn = when(col("cut") == "Fair", 1) \
 		.when(col("cut") == "Good", 2) \
 		.when(col("cut") == "Very Good", 3) \
@@ -99,47 +96,63 @@ clarityNumColumn = when(col("clarity") == "I1", 1) \
 dataFrame = dataFrame.withColumn("cutNum", cutNumColumn)
 dataFrame = dataFrame.withColumn("colorNum", colorNumColumn)
 dataFrame = dataFrame.withColumn("clarityNum", clarityNumColumn)
+
+dataFrame = dataFrame.select("carat","colorNum", "clarityNum", "depth", "table", "price", "x", "y", "z", "cutNum") \
+		.withColumnRenamed("colorNum", "color") \
+		.withColumnRenamed("clarityNum", "clarity") \
+		.withColumnRenamed("cutNum", "cut") 
 dataFrame.show()
 
 
+# -------------------------------------------------
+# Normalize data between 0 and 1
+# According to this formula:
+# zi = (xi - min(x))/(max(x)-min(x))
+# where 
+# 	zi is the normalized value 
+# 	xi is the original value prior to normalization
+#	x is (x1, x2, ..., xi, ..., xn)
+# -------------------------------------------------
+
 # Obtain all the min and max of each column for normalizatization
-maxCarat = dataFrame.select(max('carat')).collect()[0][0]
-minCarat = dataFrame.select(min('carat')).collect()[0][0]
+print('Obtaining maximums and minimums for normalization...')
+minMax = dataFrame.agg(max('carat'), min('carat'), \
+			max('cut'), min('cut'), \
+			max('color'), min('color'), \
+			max('clarity'), min('clarity'), \
+			max('depth'), min('depth'), \
+			max('table'), min('table'), \
+			max('price'), min('price'), \
+			max('x'), min('x'), \
+			max('y'), min('y'), \
+			max('z'), min('z')).collect()[0]
+maxCarat = minMax['max(carat)']
+minCarat = minMax['min(carat)']
+maxCut = minMax['max(cut)']
+minCut = minMax['min(cut)']
+maxColor = minMax['max(color)']
+minColor = minMax['min(color)']
+maxClarity = minMax['max(clarity)']
+minClarity = minMax['min(clarity)']
+maxDepth = minMax['max(depth)']
+minDepth = minMax['min(depth)']
+maxTable = minMax['max(table)']
+minTable = minMax['min(table)']
+maxPrice = minMax['max(price)']
+minPrice = minMax['min(price)']
+maxX = minMax['max(x)']
+minX = minMax['min(x)']
+maxY = minMax['max(y)']
+minY = minMax['min(y)']
+maxZ = minMax['max(z)']
+minZ = minMax['min(z)']
 
-maxCut = dataFrame.select(max('cutNum')).collect()[0][0]
-minCut = dataFrame.select(min('cutNum')).collect()[0][0]
-
-maxColor = dataFrame.select(max('colorNum')).collect()[0][0]
-minColor = dataFrame.select(min('colorNum')).collect()[0][0]
-
-maxClarity = dataFrame.select(max('clarityNum')).collect()[0][0]
-minClarity = dataFrame.select(min('clarityNum')).collect()[0][0]
-
-maxDepth = dataFrame.select(max('depth')).collect()[0][0]
-minDepth = dataFrame.select(min('depth')).collect()[0][0]
-
-maxTable = dataFrame.select(max('table')).collect()[0][0]
-minTable = dataFrame.select(min('table')).collect()[0][0]
-
-maxPrice = dataFrame.select(max('price')).collect()[0][0]
-minPrice = dataFrame.select(min('price')).collect()[0][0]
-
-maxX = dataFrame.select(max('x')).collect()[0][0]
-minX = dataFrame.select(min('x')).collect()[0][0]
-
-maxY = dataFrame.select(max('y')).collect()[0][0]
-minY = dataFrame.select(min('y')).collect()[0][0]
-
-maxZ = dataFrame.select(max('z')).collect()[0][0]
-minZ = dataFrame.select(min('z')).collect()[0][0]
-	
-print(maxPrice)
-print(minPrice)
 
 # Normalize the data
+print('Normalizing data...')
 nCaratCol = (col("carat") - float(minCarat)) / (float(maxCarat) - float(minCarat))
-nCutCol = (col("cutNum") - float(minCut)) / (float(maxCut) - float(minCut))
-nClarityCol = (col("clarityNum") - float(minClarity)) / (float(maxClarity) - float(minClarity))
+nCutCol = (col("cut") - float(minCut)) / (float(maxCut) - float(minCut))
+nClarityCol = (col("clarity") - float(minClarity)) / (float(maxClarity) - float(minClarity))
 nDepthCol = (col("depth") - float(minDepth)) / (float(maxDepth) - float(minDepth))
 nTableCol = (col("table") - float(minTable)) / (float(maxTable) - float(minTable)) 
 nPriceCol = (col("price") - float(minPrice)) / (float(maxPrice) - float(minPrice))
