@@ -86,14 +86,14 @@ dataFrame.show()
 maxCarat = dataFrame.select(max('carat')).collect()[0][0]
 minCarat = dataFrame.select(min('carat')).collect()[0][0]
 
-maxCut = dataFrame.select(max('cut')).collect()[0][0]
-minCut = dataFrame.select(min('cut')).collect()[0][0]
+maxCut = dataFrame.select(max('cutNum')).collect()[0][0]
+minCut = dataFrame.select(min('cutNum')).collect()[0][0]
 
-maxColor = dataFrame.select(max('color')).collect()[0][0]
-minColor = dataFrame.select(min('color')).collect()[0][0]
+maxColor = dataFrame.select(max('colorNum')).collect()[0][0]
+minColor = dataFrame.select(min('colorNum')).collect()[0][0]
 
-maxClarity = dataFrame.select(max('clarity')).collect()[0][0]
-minClarity = dataFrame.select(min('clarity')).collect()[0][0]
+maxClarity = dataFrame.select(max('clarityNum')).collect()[0][0]
+minClarity = dataFrame.select(min('clarityNum')).collect()[0][0]
 
 maxDepth = dataFrame.select(max('depth')).collect()[0][0]
 minDepth = dataFrame.select(min('depth')).collect()[0][0]
@@ -114,6 +114,29 @@ maxZ = dataFrame.select(max('z')).collect()[0][0]
 minZ = dataFrame.select(min('z')).collect()[0][0]
 	
 print(maxCarat)
+
+# Normalize the data
+nCaratCol = (col("carat") - float(minCarat)) / (float(maxCarat) - float(minCarat))
+nCutCol = (col("cutNum") - float(minCut)) / (float(maxCut) - float(minCut))
+nClarityCol = (col("clarityNum") - float(minClarity)) / (float(maxClarity) - float(minClarity))
+nDepthCol = (col("depth") - float(minDepth)) / (float(maxDepth) - float(minDepth))
+nTableCol = (col("table") - float(minTable)) / (float(maxTable) - float(minTable)) 
+nPriceCol = (col("price") - float(minPrice)) / (float(maxPrice) - float(minPrice))
+nXCol = (col("x") - float(minX)) / (float(maxX) - float(minX))
+nYCol = (col("y") - float(minY)) / (float(maxY) - float(minY))
+nZCol = (col("z") - float(minZ)) / (float(maxZ) - float(minZ))
+
+dataFrame = dataFrame.withColumn("nCarat", nCaratCol)
+dataFrame = dataFrame.withColumn("nCut", nCutCol)
+dataFrame = dataFrame.withColumn("nClarity", nClarityCol)
+dataFrame = dataFrame.withColumn("nDepth", nDepthCol)
+dataFrame = dataFrame.withColumn("nTable", nTableCol)
+dataFrame = dataFrame.withColumn("nPrice", nPriceCol)
+dataFrame = dataFrame.withColumn("nX", nXCol)
+dataFrame = dataFrame.withColumn("nY", nYCol)
+dataFrame = dataFrame.withColumn("nZ", nZCol)
+
+dataFrame.show()
 
 # -------------------------------------------------
 # Create a training and test dataset
