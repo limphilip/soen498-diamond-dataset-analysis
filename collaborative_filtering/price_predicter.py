@@ -112,7 +112,6 @@ dataFrame.show()
 # 	xi is the original value prior to normalization
 #	x is (x1, x2, ..., xi, ..., xn)
 # -------------------------------------------------
-
 # Obtain all the min and max of each column for normalizatization
 print('Obtaining maximums and minimums for normalization...')
 minMax = dataFrame.agg(max('carat'), min('carat'), \
@@ -170,8 +169,6 @@ dataFrame = dataFrame.withColumn("nPrice", nPriceCol)
 dataFrame = dataFrame.withColumn("nX", nXCol)
 dataFrame = dataFrame.withColumn("nY", nYCol)
 dataFrame = dataFrame.withColumn("nZ", nZCol)
-
-dataFrame.show()
 
 dataFrame = dataFrame.select("nCarat", "nColor", "nClarity", "nDepth", "nTable", "nPrice", "nX", "nY", "nZ", "nCut") \
 		.withColumnRenamed("nCarat", "carat") \
