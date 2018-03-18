@@ -60,7 +60,6 @@ dataFrame = dataFrame.select("caratDouble","color", "clarity", "depthDouble", "t
 		.withColumnRenamed("yDouble", "y") \
 		.withColumnRenamed("zDouble", "z")
 dataFrame.show()
-print(dataFrame.schema)
 
 
 # -------------------------------------------------
@@ -126,42 +125,44 @@ minMax = dataFrame.agg(max('carat'), min('carat'), \
 			max('x'), min('x'), \
 			max('y'), min('y'), \
 			max('z'), min('z')).collect()[0]
-maxCarat = minMax['max(carat)']
-minCarat = minMax['min(carat)']
-maxCut = minMax['max(cut)']
-minCut = minMax['min(cut)']
-maxColor = minMax['max(color)']
-minColor = minMax['min(color)']
-maxClarity = minMax['max(clarity)']
-minClarity = minMax['min(clarity)']
-maxDepth = minMax['max(depth)']
-minDepth = minMax['min(depth)']
-maxTable = minMax['max(table)']
-minTable = minMax['min(table)']
-maxPrice = minMax['max(price)']
-minPrice = minMax['min(price)']
-maxX = minMax['max(x)']
-minX = minMax['min(x)']
-maxY = minMax['max(y)']
-minY = minMax['min(y)']
-maxZ = minMax['max(z)']
-minZ = minMax['min(z)']
+maxCarat = float(minMax['max(carat)'])
+minCarat = float(minMax['min(carat)'])
+maxCut = float(minMax['max(cut)'])
+minCut = float(minMax['min(cut)'])
+maxColor = float(minMax['max(color)'])
+minColor = float(minMax['min(color)'])
+maxClarity = float(minMax['max(clarity)'])
+minClarity = float(minMax['min(clarity)'])
+maxDepth = float(minMax['max(depth)'])
+minDepth = float(minMax['min(depth)'])
+maxTable = float(minMax['max(table)'])
+minTable = float(minMax['min(table)'])
+maxPrice = float(minMax['max(price)'])
+minPrice = float(minMax['min(price)'])
+maxX = float(minMax['max(x)'])
+minX = float(minMax['min(x)'])
+maxY = float(minMax['max(y)'])
+minY = float(minMax['min(y)'])
+maxZ = float(minMax['max(z)'])
+minZ = float(minMax['min(z)'])
 
 
 # Normalize the data
 print('Normalizing data...')
-nCaratCol = (col("carat") - float(minCarat)) / (float(maxCarat) - float(minCarat))
-nCutCol = (col("cut") - float(minCut)) / (float(maxCut) - float(minCut))
-nClarityCol = (col("clarity") - float(minClarity)) / (float(maxClarity) - float(minClarity))
-nDepthCol = (col("depth") - float(minDepth)) / (float(maxDepth) - float(minDepth))
-nTableCol = (col("table") - float(minTable)) / (float(maxTable) - float(minTable)) 
-nPriceCol = (col("price") - float(minPrice)) / (float(maxPrice) - float(minPrice))
-nXCol = (col("x") - float(minX)) / (float(maxX) - float(minX))
-nYCol = (col("y") - float(minY)) / (float(maxY) - float(minY))
-nZCol = (col("z") - float(minZ)) / (float(maxZ) - float(minZ))
+nCaratCol = (col("carat") - minCarat) / (maxCarat - minCarat)
+nCutCol = (col("cut") - minCut) / (maxCut - minCut)
+nColorCol = (col("color") - minColor) / (maxColor - minColor)
+nClarityCol = (col("clarity") - minClarity) / (maxClarity - minClarity)
+nDepthCol = (col("depth") - minDepth) / (maxDepth - minDepth)
+nTableCol = (col("table") - minTable) / (maxTable - minTable) 
+nPriceCol = (col("price") - minPrice) / (maxPrice - minPrice)
+nXCol = (col("x") - minX) / (maxX - minX)
+nYCol = (col("y") - minY) / (maxY - minY)
+nZCol = (col("z") - minZ) / (maxZ - minZ)
 
 dataFrame = dataFrame.withColumn("nCarat", nCaratCol)
 dataFrame = dataFrame.withColumn("nCut", nCutCol)
+dataFrame = dataFrame.withColumn("nColor", nColorCol)
 dataFrame = dataFrame.withColumn("nClarity", nClarityCol)
 dataFrame = dataFrame.withColumn("nDepth", nDepthCol)
 dataFrame = dataFrame.withColumn("nTable", nTableCol)
@@ -172,12 +173,25 @@ dataFrame = dataFrame.withColumn("nZ", nZCol)
 
 dataFrame.show()
 
+dataFrame = dataFrame.select("nCarat", "nColor", "nClarity", "nDepth", "nTable", "nPrice", "nX", "nY", "nZ", "nCut") \
+		.withColumnRenamed("nCarat", "carat") \
+		.withColumnRenamed("nColor", "color") \
+		.withColumnRenamed("nClarity", "clarity") \
+		.withColumnRenamed("nDepth", "depth") \
+		.withColumnRenamed("nTable", "table") \
+		.withColumnRenamed("nPrice", "price") \
+		.withColumnRenamed("nX", "x") \
+		.withColumnRenamed("nY", "y") \
+		.withColumnRenamed("nZ", "z") \
+		.withColumnRenamed("nCut", "cut") 
+dataFrame.show()
+
 # -------------------------------------------------
 # Create a training and test dataset
 # and ALS model
 # -------------------------------------------------
 (training, test) = dataFrame.randomSplit([0.8, 0.2], seed=seedValue)
-als = ALS(maxIter=maxIteration, regParam=0.01, userCol=userColumn, itemCol=itemColumn, rating="price", coldStartStrategy="drop", rank=70)
+als = ALS(maxIter=maxIteration, regParam=0.01, userCol=userColumn, itemCol=itemColumn, ratingCol="price", coldStartStrategy="drop", rank=70)
 als.setSeed(seedValue)
 model = als.fit(training)
 
@@ -185,6 +199,6 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
-evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+evaluator = RegressionEvaluator(metricName="rmse", labelCol="price", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
 print(float(rmse))
