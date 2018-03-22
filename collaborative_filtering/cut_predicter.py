@@ -142,7 +142,7 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
-
+# predictions.show()
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="cut", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
 print(float(rmse))
