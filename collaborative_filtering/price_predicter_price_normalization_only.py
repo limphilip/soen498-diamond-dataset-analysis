@@ -23,7 +23,7 @@ from pyspark.ml.recommendation import ALS
 from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.ml.linalg import Vectors
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import min, max, col, when
+from pyspark.sql.functions import min, max, col, when, desc
 from pyspark.sql.types import DoubleType
 
 spark = SparkSession.builder.getOrCreate()
@@ -125,7 +125,9 @@ minPrice = float(minMax['min(price)'])
 
 # Normalize the data
 print('Normalizing data...')
-nPriceCol = (col("price") - minPrice) / (maxPrice - minPrice)
+scaleMax = 1000
+scaleMin = 1
+nPriceCol = ((col("price") - minPrice) / (maxPrice - minPrice)) * (scaleMax-scaleMin) + scaleMin
 dataFrame = dataFrame.withColumn("nPrice", nPriceCol)
 dataFrame = dataFrame.select("carat", "color", "clarity", "depth", "table", "nPrice", "x", "y", "z", "cut") \
 		.withColumnRenamed("nPrice", "price")
@@ -144,6 +146,10 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
+predictions.show()
+
+predictions.orderBy(desc("price")).show()
+
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="price", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
 print(float(rmse))
