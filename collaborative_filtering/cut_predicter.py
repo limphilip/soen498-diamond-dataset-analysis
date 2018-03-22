@@ -31,7 +31,6 @@ spark = SparkSession.builder.getOrCreate()
 # -------------------------------------------------
 # Obtain the system arguments
 # -------------------------------------------------
-print('Reading arguments...')
 dataFilePath = sys.argv[1]
 seedValue = int(sys.argv[2])
 userColumn = sys.argv[3]
@@ -42,10 +41,8 @@ maxIteration = int(sys.argv[5])
 # Read the input file and cast the numeric column
 # to double type
 # -------------------------------------------------
-print('Reading data file...')
 dataFrame = spark.read.csv(dataFilePath, header=True)
 
-print('Casting numeric data to Double...')
 dataFrame = dataFrame.withColumn("caratDouble", dataFrame["carat"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("depthDouble", dataFrame["depth"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("tableDouble", dataFrame["table"].cast(DoubleType()))
@@ -62,7 +59,6 @@ dataFrame = dataFrame.select("caratDouble","color", "clarity", "depthDouble", "t
 		.withColumnRenamed("xDouble", "x") \
 		.withColumnRenamed("yDouble", "y") \
 		.withColumnRenamed("zDouble", "z")
-dataFrame.show()
 
 # -------------------------------------------------
 # Change the double to int, so that they can be 
@@ -94,12 +90,10 @@ dataFrame = dataFrame.select("caratInt", "color", "clarity", "depthInt", "tableI
 		.withColumnRenamed("xInt", "x") \
 		.withColumnRenamed("yInt", "y") \
 		.withColumnRenamed("zInt", "z")
-dataFrame.show()
 
 # -------------------------------------------------
 # Transform the labels to numbers 
 # -------------------------------------------------
-print('Mapping categorical data to numerical...')
 cutNumColumn = when(col("cut") == "Fair", 1) \
 		.when(col("cut") == "Good", 2) \
 		.when(col("cut") == "Very Good", 3) \
@@ -134,7 +128,6 @@ dataFrame = dataFrame.select("carat","colorNum", "clarityNum", "depth", "table",
 		.withColumnRenamed("colorNum", "color") \
 		.withColumnRenamed("clarityNum", "clarity") \
 		.withColumnRenamed("cutNum", "cut") 
-dataFrame.show()
 
 # -------------------------------------------------
 # Create a training and test dataset
@@ -149,9 +142,6 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
-predictions.show()
-
-predictions.orderBy(desc("price")).show()
 
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="cut", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
