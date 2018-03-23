@@ -12,8 +12,7 @@ seed = str(123)
 datafile = "data/diamonds.csv"
 
 # Print table header
-print("| User | Item | RMSE |")
-print("|------|------|------|")
+print("User,Item,RMSE")
 
 # Try each candidate pair (carat, color), (carat, clarity), ... (z,y)
 # and run the cut_predicter.py for each pair, making a table
@@ -28,7 +27,7 @@ for user in cols:
 		rmse = str(float(process.stdout.read().decode("utf-8")))
 		
 		# Print the table
-		print ("| " + user + " | " + item + " | " + rmse + " |")
+		print (user + "," + item + "," + rmse)
 
 
 
