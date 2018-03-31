@@ -133,7 +133,7 @@ dataFrame = dataFrame.select("carat","colorNum", "clarityNum", "depth", "table",
 # Create a training and test dataset
 # and ALS model
 # -------------------------------------------------
-(training, test) = dataFrame.randomSplit([0.8, 0.2], seed=seedValue)
+(training, test) = dataFrame.randomSplit([0.7, 0.3], seed=seedValue)
 als = ALS(maxIter=maxIteration, regParam=0.01, userCol=userColumn, itemCol=itemColumn, ratingCol="cut", coldStartStrategy="drop", rank=70)
 als.setSeed(seedValue)
 model = als.fit(training)
@@ -142,7 +142,7 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
-# predictions.show()
+# predictions.orderBy("price").show(50)
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="cut", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
 print(float(rmse))
