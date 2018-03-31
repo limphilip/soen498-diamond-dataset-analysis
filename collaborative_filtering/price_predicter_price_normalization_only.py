@@ -23,15 +23,14 @@ from pyspark.ml.recommendation import ALS
 from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.ml.linalg import Vectors
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import min, max, col, when, desc
-from pyspark.sql.types import DoubleType
+from pyspark.sql.functions import min, max, col, when, desc, round
+from pyspark.sql.types import DoubleType, IntegerType
 
 spark = SparkSession.builder.getOrCreate()
 
 # -------------------------------------------------
 # Obtain the system arguments
 # -------------------------------------------------
-print('Reading arguments...')
 dataFilePath = sys.argv[1]
 seedValue = int(sys.argv[2])
 userColumn = sys.argv[3]
@@ -42,10 +41,8 @@ maxIteration = int(sys.argv[5])
 # Read the input file and cast the numeric column
 # to double type
 # -------------------------------------------------
-print('Reading data file...')
 dataFrame = spark.read.csv(dataFilePath, header=True)
 
-print('Casting numeric data to Double...')
 dataFrame = dataFrame.withColumn("caratDouble", dataFrame["carat"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("depthDouble", dataFrame["depth"].cast(DoubleType()))
 dataFrame = dataFrame.withColumn("tableDouble", dataFrame["table"].cast(DoubleType()))
@@ -62,13 +59,41 @@ dataFrame = dataFrame.select("caratDouble","color", "clarity", "depthDouble", "t
 		.withColumnRenamed("xDouble", "x") \
 		.withColumnRenamed("yDouble", "y") \
 		.withColumnRenamed("zDouble", "z")
-dataFrame.show()
 
+# -------------------------------------------------
+# Change the double to int, so that they can be 
+# used as a user/item 
+# -------------------------------------------------
+
+# Carat: They have at most two decimals, so multiply
+# by 100 (d.dd --> ddd)
+dataFrame = dataFrame.withColumn("caratInt", round(dataFrame["carat"] * 100).cast(IntegerType()))
+
+# Depth: They have at most one decimal, so multiply
+# by 10 (d.d --> dd)
+dataFrame = dataFrame.withColumn("depthInt", round(dataFrame["depth"] * 10).cast(IntegerType()))
+
+# Table: They have at most one decimal, so multiply
+# by 10 (d.d --> dd)
+dataFrame = dataFrame.withColumn("tableInt", round(dataFrame["table"] * 10).cast(IntegerType()))
+
+# x,y and z: They have at most two decimals, so multiply
+# by 100 (d.dd --> dd)
+dataFrame = dataFrame.withColumn("xInt", round(dataFrame["x"] * 100).cast(IntegerType()))
+dataFrame = dataFrame.withColumn("yInt", round(dataFrame["y"] * 100).cast(IntegerType()))
+dataFrame = dataFrame.withColumn("zInt", round(dataFrame["z"] * 100).cast(IntegerType()))
+
+dataFrame = dataFrame.select("caratInt", "color", "clarity", "depthInt", "tableInt", "price", "xInt", "yInt", "zInt", "cut") \
+		.withColumnRenamed("caratInt", "carat") \
+		.withColumnRenamed("depthInt", "depth") \
+		.withColumnRenamed("tableInt", "table") \
+		.withColumnRenamed("xInt", "x") \
+		.withColumnRenamed("yInt", "y") \
+		.withColumnRenamed("zInt", "z")
 
 # -------------------------------------------------
 # Transform the labels to numbers 
 # -------------------------------------------------
-print('Mapping categorical data to numerical...')
 cutNumColumn = when(col("cut") == "Fair", 1) \
 		.when(col("cut") == "Good", 2) \
 		.when(col("cut") == "Very Good", 3) \
@@ -102,8 +127,7 @@ dataFrame = dataFrame.withColumn("clarityNum", clarityNumColumn)
 dataFrame = dataFrame.select("carat","colorNum", "clarityNum", "depth", "table", "price", "x", "y", "z", "cutNum") \
 		.withColumnRenamed("colorNum", "color") \
 		.withColumnRenamed("clarityNum", "clarity") \
-		.withColumnRenamed("cutNum", "cut") 
-dataFrame.show()
+		.withColumnRenamed("cutNum", "cut")
 
 
 # -------------------------------------------------
@@ -117,27 +141,24 @@ dataFrame.show()
 # -------------------------------------------------
 
 # Obtain all the min and max of each column for normalizatization
-print('Obtaining maximums and minimums for normalization...')
 minMax = dataFrame.agg(max('price'), min('price')).collect()[0]
 maxPrice = float(minMax['max(price)'])
 minPrice = float(minMax['min(price)'])
 
 
 # Normalize the data
-print('Normalizing data...')
-scaleMax = 1000
+scaleMax = 5
 scaleMin = 1
 nPriceCol = ((col("price") - minPrice) / (maxPrice - minPrice)) * (scaleMax-scaleMin) + scaleMin
 dataFrame = dataFrame.withColumn("nPrice", nPriceCol)
 dataFrame = dataFrame.select("carat", "color", "clarity", "depth", "table", "nPrice", "x", "y", "z", "cut") \
 		.withColumnRenamed("nPrice", "price")
-dataFrame.show()
 
 # -------------------------------------------------
 # Create a training and test dataset
 # and ALS model
 # -------------------------------------------------
-(training, test) = dataFrame.randomSplit([0.8, 0.2], seed=seedValue)
+(training, test) = dataFrame.randomSplit([0.7, 0.3], seed=seedValue)
 als = ALS(maxIter=maxIteration, regParam=0.01, userCol=userColumn, itemCol=itemColumn, ratingCol="price", coldStartStrategy="drop", rank=70)
 als.setSeed(seedValue)
 model = als.fit(training)
@@ -146,9 +167,6 @@ model = als.fit(training)
 # Evaluate the prediction model 
 # -------------------------------------------------
 predictions = model.transform(test)
-predictions.show()
-
-predictions.orderBy(desc("price")).show()
 
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="price", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
