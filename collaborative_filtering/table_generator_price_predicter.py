@@ -21,7 +21,7 @@ for user in cols:
 		if user == item:
 			continue
 		# Run script
-		command = "python collaborative_filtering/price_predicter_price_normalization_only.py " + datafile + " " + seed + " " + user + " " + item + " " + max_iter
+		command = "python collaborative_filtering/price_predicter.py " + datafile + " " + seed + " " + user + " " + item + " " + max_iter
 		process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		code = process.wait()
 		rmse = str(float(process.stdout.read().decode("utf-8")))
