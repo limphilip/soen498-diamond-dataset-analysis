@@ -19,7 +19,7 @@ data = MLUtils.loadLibSVMFile(sc, 'data/diamonds_dimensions_only.data')
 # Setting featureSubsetStrategy="auto" lets the algorithm choose.
 model = RandomForest.trainClassifier(trainingData, numClasses=9, categoricalFeaturesInfo={},
                                      numTrees=25, featureSubsetStrategy="auto",
-                                     impurity='gini', maxDepth=20, maxBins=32, seed=123)
+                                     impurity='gini', maxDepth=15, maxBins=32, seed=123)
 
 # Evaluate model on test instances and compute test error
 predictions = model.predict(testData.map(lambda x: x.features))

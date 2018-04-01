@@ -4,8 +4,6 @@ from pyspark.mllib.util import MLUtils
 from pyspark.sql import SparkSession
 from pyspark import SparkContext, SparkConf
 
-#conf = SparkConf().setAppName("DiamondProject").setMaster("local")
-#sc = SparkContext(conf=conf)
 spark = SparkSession.builder.master("local").appName("DiamondProject").getOrCreate()
 sc = spark.sparkContext
 
@@ -20,7 +18,7 @@ data = MLUtils.loadLibSVMFile(sc, 'data/diamonds_price.data')
 #  Note: Use larger numTrees in practice.
 #  Setting featureSubsetStrategy="auto" lets the algorithm choose.
 model = RandomForest.trainRegressor(trainingData, categoricalFeaturesInfo={},
-                                     numTrees=20, featureSubsetStrategy="auto",
+                                     numTrees=25, featureSubsetStrategy="auto",
                                      impurity='variance', maxDepth=20, maxBins=32, seed=123)
 
 # Evaluate model on test instances and compute test error
@@ -30,8 +28,6 @@ labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 testMSE = labelsAndPredictions.map(lambda lp: (lp[0] - lp[1])**2).sum() / float(testData.count())
 
 result = testData.zip(predictions).collect()
-
-print('Test Mean Squared Error = ' + str(testMSE))
 
 # Print the predictions to output file
 with open('machine_learning/results/predicted_price.txt', 'w') as f:
@@ -43,6 +39,6 @@ with open('machine_learning/results/predicted_price.txt', 'w') as f:
 with open('machine_learning/models/forest_model_predicted_price.txt', 'w') as f:
         f.write(model.toDebugString())
 
-labeled_result = labelsAndPredictions.map(lambda p: Row(label=float(p[0]), predictions=float(p[1])))
+labeled_result = labelsAndPredictions.map(lambda p: Row(price=float(p[0]), predictions=float(p[1])))
 result = spark.createDataFrame(labeled_result).show(25)
-
+print('Test Mean Squared Error = ' + str(testMSE))

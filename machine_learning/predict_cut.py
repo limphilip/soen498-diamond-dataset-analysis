@@ -18,7 +18,7 @@ data = MLUtils.loadLibSVMFile(sc, 'data/diamonds.data')
 # Setting featureSubsetStrategy="auto" lets the algorithm choose.
 model = RandomForest.trainClassifier(trainingData, numClasses=9, categoricalFeaturesInfo={},
                                      numTrees=25, featureSubsetStrategy="auto",
-                                     impurity='gini', maxDepth=20, maxBins=32, seed=123)
+                                     impurity='gini', maxDepth=15, maxBins=32, seed=123)
 
 # Evaluate model on test instances and compute test error
 predictions = model.predict(testData.map(lambda x: x.features))
@@ -39,4 +39,4 @@ with open('machine_learning/models/forest_model_predicted_cut.txt', 'w') as f:
 
 labeled_result = labelsAndPredictions.map(lambda p: Row(cut=float(p[0]), predictions=float(p[1])))
 result = spark.createDataFrame(labeled_result).show(25)
-
+print('Test Error = ' + str(testErr)+"\n")
