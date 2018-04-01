@@ -28,13 +28,13 @@ testErr = labelsAndPredictions.filter(
 result = testData.zip(predictions).collect()
 
 # Print the predictions to output file
-with open('machine_learning/predicted_cut.txt', 'w') as f:
+with open('machine_learning/results/predicted_cut.txt', 'w') as f:
 	for i in result:
 		f.write(str(i)+"\n")
 	f.write('Test Error = ' + str(testErr)+"\n")
 
 # Print the learned classication forest model to output file
-with open('machine_learning/forest_model_predicted_cut.txt', 'w') as f:
+with open('machine_learning/models/forest_model_predicted_cut.txt', 'w') as f:
 	f.write(model.toDebugString())
 
 labeled_result = labelsAndPredictions.map(lambda p: Row(cut=float(p[0]), predictions=float(p[1])))
