@@ -28,15 +28,16 @@ testErr = labelsAndPredictions.filter(
     lambda lp: lp[0] != lp[1]).count() / float(testData.count())
 result = testData.zip(predictions).collect()
 
-with open('machine_learning/cut_predicted_subset.txt', 'w') as f:
-	for i in result:
-		f.write(i)
-		f.write('Test Error = ' + str(testErr))
+# Print the predictions to output file
+with open('machine_learning/predicted_cut_subset.txt', 'w') as f:
+        for i in result:
+                f.write(str(i)+"\n")
+        f.write('Test Error = ' + str(testErr)+"\n")
+
+# Print the learned classication forest model to output file
+with open('machine_learning/forest_model_predicted_cut_subset.txt', 'w') as f:
+        f.write(model.toDebugString())
 
 labeled_result = labelsAndPredictions.map(lambda p: Row(cut=float(p[0]), predictions=float(p[1])))
 result = spark.createDataFrame(labeled_result).show(25)
 print('Test Error = ' + str(testErr))
-
-# Save and load model
-model.save(sc, "machine_learning/models/DiamondClassificationModel_subset")
-sameModel = RandomForestModel.load(sc, "machine_learning/models/DiamondClassificationModel_subset")

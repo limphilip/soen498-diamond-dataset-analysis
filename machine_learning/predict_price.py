@@ -28,11 +28,21 @@ predictions = model.predict(testData.map(lambda x: x.features))
 labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 
 testMSE = labelsAndPredictions.map(lambda lp: (lp[0] - lp[1])**2).sum() / float(testData.count())
-labeled_result = labelsAndPredictions.map(lambda p: Row(label=float(p[0]), predictions=float(p[1])))
-result = spark.createDataFrame(labeled_result).show(25)
+
+result = testData.zip(predictions).collect()
 
 print('Test Mean Squared Error = ' + str(testMSE))
 
-# Save and load model
-#model.save(sc, "target/tmp/DiamondRegressionModel")
-#sameModel = RandomForestModel.load(sc, "target/tmp/DiamondRegressionModel")
+# Print the predictions to output file
+with open('machine_learning/predicted_price.txt', 'w') as f:
+        for i in result:
+                f.write(str(i)+"\n")
+        f.write('Test Mean Squared Error = ' + str(testMSE))
+
+# Print the learned classication forest model to output file
+with open('machine_learning/forest_model_predicted_price.txt', 'w') as f:
+        f.write(model.toDebugString())
+
+labeled_result = labelsAndPredictions.map(lambda p: Row(label=float(p[0]), predictions=float(p[1])))
+result = spark.createDataFrame(labeled_result).show(25)
+
