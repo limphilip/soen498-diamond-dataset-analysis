@@ -145,4 +145,15 @@ predictions = model.transform(test)
 # predictions.orderBy("price").show(50)
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="cut", predictionCol="prediction")
 rmse = evaluator.evaluate(predictions)
-print(float(rmse))
+
+# Evaluate the percentage of correctly classified
+inaccurateRoundedPredictionCount = predictions.withColumn("roundedPrediction", round(col("prediction")).cast(IntegerType())) \
+				.filter(col("cut") != col("roundedPrediction")) \
+				.count()
+percentError = inaccurateRoundedPredictionCount / predictions.count()
+
+# Print the rmse and the percentage of accuracy after rounding
+print(str(rmse) + "," + str(percentError), end="")
+
+
+
