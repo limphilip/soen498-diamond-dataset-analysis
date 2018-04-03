@@ -1,3 +1,4 @@
+import math
 from pyspark.sql import Row, SparkSession
 from pyspark.mllib.tree import RandomForest, RandomForestModel
 from pyspark.mllib.util import MLUtils
@@ -25,7 +26,7 @@ model = RandomForest.trainRegressor(trainingData, categoricalFeaturesInfo={},
 predictions = model.predict(testData.map(lambda x: x.features))
 labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 
-testMSE = labelsAndPredictions.map(lambda lp: (lp[0] - lp[1])**2).sum() / float(testData.count())
+testRMSE = math.sqrt(labelsAndPredictions.map(lambda lp: (lp[0] - lp[1])**2).sum() / float(testData.count()))
 
 result = testData.zip(predictions).collect()
 
@@ -33,7 +34,7 @@ result = testData.zip(predictions).collect()
 with open('machine_learning/results/predicted_price.txt', 'w') as f:
         for i in result:
                 f.write(str(i)+"\n")
-        f.write('Test Mean Squared Error = ' + str(testMSE))
+        f.write('Test Root Mean Square Error = ' + str(testRMSE))
 
 # Print the learned classication forest model to output file
 with open('machine_learning/models/forest_model_predicted_price.txt', 'w') as f:
@@ -41,4 +42,4 @@ with open('machine_learning/models/forest_model_predicted_price.txt', 'w') as f:
 
 labeled_result = labelsAndPredictions.map(lambda p: Row(price=float(p[0]), predictions=float(p[1])))
 result = spark.createDataFrame(labeled_result).show(25)
-print('Test Mean Squared Error = ' + str(testMSE))
+print('Test Root Mean Square Error = ' + str(testRMSE))
